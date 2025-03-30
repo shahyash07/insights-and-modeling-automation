@@ -29,7 +29,8 @@ dag = DAG(
 GCS_PATH = "gs://us-central1-airflow-71403677-bucket/data"
 
 def data_extraction_transform():
-    """Input: None, Output: DataFrame, Description: Extracts and transforms sales data from Kaggle dataset with feature engineering."""
+    """Output: DataFrame,
+     Extracts and transforms sales data from Kaggle dataset with feature engineering."""
     months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     file_path_list = [f"Sales_data/Sales_{i}_2019.csv" for i in months ]
     df = pd.DataFrame()
@@ -58,7 +59,8 @@ def data_extraction_transform():
     return df
 
 def model_building_and_validation(df, product):
-    """Input: DataFrame, product name, Output: None, Description: Trains and validates RandomForest model for a specific product."""
+    """Input: DataFrame, product name,
+    Trains and validates RandomForest model for a specific product."""
     df_model_data = df[df['Product'] == product].drop(columns=['Product'])
     X = df_model_data.drop(columns=['sales'])
     y = df_model_data['sales']
@@ -80,14 +82,18 @@ def model_building_and_validation(df, product):
 
 # Function to extract and transform data
 def extract_and_transform_data(**kwargs):
-    """Input: Airflow context kwargs, Output: CSV file path, Description: Extracts data, saves to GCS, and pushes file path to XCom."""
+    """Input: Airflow context kwargs, 
+    Output: CSV file path,
+    Extracts data, saves to GCS, and pushes file path to XCom."""
     df = data_extraction_transform()
     kwargs['ti'].xcom_push(key='gcs_sales_file_path', value=f'{GCS_PATH}/sales_data_all_products.csv')
 
     return df.to_csv(f'{GCS_PATH}/sales_data_all_products.csv')  # saving it in gcs
 
 def upload_to_gcs(model_file, gcs_path):
-    """Input: model file name, GCS path, Output: None, Description: Uploads model file to Google Cloud Storage."""
+    """Input: model file name, GCS path
+     Uploads model file to Google Cloud Storage.
+     """
     storage_client = storage.Client()
     bucket = storage_client.get_bucket('us-central1-airflow-71403677-bucket')  
     blob = bucket.blob(f"{gcs_path}/{model_file}")
@@ -96,7 +102,7 @@ def upload_to_gcs(model_file, gcs_path):
 
 # Function to get unique products from the data
 def get_unique_products(**kwargs):
-    """Input: Airflow context kwargs, 
+    """
       Output: List of products,
      Gets unique products from data and pushes to XCom.
      """
@@ -127,7 +133,7 @@ get_products_task = PythonOperator(
 
 # Function to build model for a single product
 def build_model_for_product(**kwargs):
-    """Input: Airflow context kwargs with product name, Output: None,
+    """Input: Airflow context kwargs with product name,
       Builds and validates model for a specific product using data from XCom."""
     ti = kwargs['ti']
     product = kwargs['product']
@@ -146,7 +152,7 @@ with dag:
                 python_callable=build_model_for_product,
                 op_kwargs={'product': f'{{{{ task_instance.xcom_pull(task_ids="get_unique_products", key="products_list")[{i}] }}}}'},
                 trigger_rule='all_success',
-                pool='model_training_pool',
+                pool='model_training_pool', # this make sure to run it parrellaly with task groups
             )
 
 # Setting up a pool for parallel task execution
