@@ -10,7 +10,7 @@
 - here, artifacts are stored in gcs bucket
 - pending: yml file configuration for github actions
 -   This process would copy the dag from github to gcs dag folder and then after pushing the changes it can trigger the Dag
--   I have extensively used my Pc financial deployed dags:  to take reference
+
 
 # Diabetics analytics
 - Insights are found using Kaggle data from 2015 for people who don't have diabetes, pre-diabetics, and diabetic patients
